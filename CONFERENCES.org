@@ -1,0 +1,383 @@
+#+TITLE: Conference Submission Guide for Guile Roulette
+#+AUTHOR: guile-roulette contributors
+#+DATE: 2025-10-04
+
+* Target Conferences for 2026
+
+** Scheme and Lisp Conferences
+
+*** Scheme Workshop (co-located with ICFP)
+- *When*: September 2026
+- *Where*: Milan, Italy (tentative)
+- *Deadline*: Typically May/June
+- *Format*: 30-minute talk + proceedings paper
+- *Audience*: Scheme researchers and practitioners
+- *Why Submit*: Primary venue for Scheme developments
+
+*** European Lisp Symposium (ELS)
+- *When*: April/May 2026
+- *Where*: Europe (rotating location)
+- *Deadline*: Typically January/February
+- *Format*: 20-30 minute talk
+- *Audience*: Lisp community, academic and industrial
+- *Why Submit*: Broad Lisp audience, welcoming to practical tools
+
+*** International Lisp Conference (ILC)
+- *When*: Fall 2026 (if held)
+- *Where*: TBD
+- *Format*: Various talk lengths
+- *Audience*: Lisp enthusiasts, practitioners
+- *Why Submit*: Community-focused, great networking
+
+** Functional Programming Conferences
+
+*** ICFP (International Conference on Functional Programming)
+- *When*: September 2026
+- *Where*: Milan, Italy (tentative)
+- *Deadline*: March 2026
+- *Format*: Full research paper or talk
+- *Track*: Consider "Experience Report" or "Demo"
+- *Why Submit*: Prestigious FP venue
+
+*** Lambda Days
+- *When*: February 2026
+- *Where*: Kraków, Poland
+- *Deadline*: October/November 2025
+- *Format*: 40-minute talk
+- *Audience*: FP practitioners
+- *Why Submit*: Practitioner-focused, welcoming atmosphere
+
+** Probability and Statistics Conferences
+
+*** StanCon (Stan Users Conference)
+- *When*: Summer 2026
+- *Deadline*: Early 2026
+- *Format*: Talk + poster
+- *Why Submit*: Probabilistic programming audience
+
+*** Statistical Computing Workshops
+- Various workshops throughout 2026
+- Focus on computational statistics
+- Good for demonstrating practical applications
+
+** Open Source and Scientific Computing
+
+*** SciPy Conference
+- *When*: July 2026
+- *Where*: Austin, TX
+- *Track*: Consider tools/education track
+- *Why Submit*: Scientific computing audience
+
+*** FOSDEM (Free and Open Source Developers' European Meeting)
+- *When*: February 2026
+- *Where*: Brussels, Belgium
+- *Format*: Short talk (20-30 min)
+- *Track*: Functional Programming devroom
+- *Why Submit*: Large audience, free conference
+
+* Proposed Talk Titles
+
+** For Scheme/Lisp Venues
+
+1. *"Guile Roulette: Bringing Measure-Theoretic Probability to Guile"*
+   - Technical focus
+   - Implementation details
+   - API design decisions
+
+2. *"Functional Probability: A Guile Port of Racket's Roulette"*
+   - Porting experience
+   - Cross-dialect insights
+   - Community collaboration
+
+3. *"Teaching Probability Theory with Guile Roulette"*
+   - Educational focus
+   - REPL-driven exploration
+   - Pedagogical benefits
+
+** For FP Venues
+
+1. *"Experience Report: Porting a Probabilistic Programming Library from Racket to Guile"*
+   - Lessons learned
+   - Technical challenges
+   - Community benefits
+
+2. *"First-Class Probability Distributions in Scheme"*
+   - Functional approach to probability
+   - Composition and abstraction
+   - Practical applications
+
+** For Statistics Venues
+
+1. *"Probability as Code: A Scheme Library for Distribution Modeling"*
+   - Bridge between math and code
+   - Practical modeling examples
+   - Comparison with PPLs
+
+* Abstract Template
+
+** Short Abstract (150 words)
+
+#+begin_example
+Guile Roulette is a functional probability library for Guile Scheme,
+ported from Racket's roulette. It provides clean abstractions for
+measurable spaces, probability measures, and random variables using
+pure functional programming principles.
+
+Unlike sampling-based approaches, Roulette works directly with
+probability distributions as first-class values. Users define
+measurable spaces (domains), measures (probability assignments), and
+random variables through elegant macros. The library supports both
+discrete and continuous distributions with a composable API.
+
+This talk demonstrates practical applications in reliability
+engineering, financial modeling, and quality control. We discuss
+implementation using SRFI-9 records and syntax transformers, along
+with lessons learned from cross-dialect porting. The library is
+production-ready with comprehensive tests and documentation.
+
+Target audience: Scheme programmers, probability modelers, educators.
+#+end_example
+
+** Extended Abstract (500 words)
+
+#+begin_example
+Introduction
+------------
+Probabilistic programming combines programming languages with
+probability theory to enable elegant modeling of uncertainty. While
+languages like Stan and PyMC offer powerful inference, they lack the
+simplicity and composability of functional programming. Guile Roulette
+brings measure-theoretic probability to Scheme through a clean,
+functional API.
+
+Background
+----------
+Originally developed for Racket, Roulette represents probability
+distributions as first-class values. This differs from sampling-based
+libraries that generate random numbers; instead, Roulette manipulates
+the distributions themselves. The library is grounded in measure
+theory: measurable spaces define domains, measures assign
+probabilities, and random variables are symbolic representations.
+
+Implementation
+--------------
+The Guile port uses SRFI-9 records for type safety and syntax
+transformers for ergonomic random variable definitions. The core
+architecture separates concerns:
+
+1. Core module: measurable spaces, measures, inference engines
+2. Inference module: random variable macros, query operations
+
+Key design decisions include:
+- Pure functional (no hidden state)
+- First-class distributions
+- Composable abstractions
+- REPL-friendly exploration
+
+The define-measurable macro demonstrates Scheme's power:
+
+  (define-measurable (coin)
+    (make-measure
+     (make-measurable-space boolean?)
+     (lambda (outcome) 0.5)))
+
+This creates a symbolic random variable with an associated measure,
+queryable through the infer operation.
+
+Applications
+------------
+We demonstrate real-world use cases:
+
+1. Reliability Engineering: Component lifetime modeling with
+   exponential distributions
+2. Financial Modeling: Portfolio returns with normal distributions
+3. Quality Control: Defect rate analysis with Bernoulli processes
+4. Queueing Theory: Customer service with Poisson arrivals
+
+Educational Value
+-----------------
+Guile Roulette excels in teaching contexts. Students can:
+- Experiment with distributions at the REPL
+- Build intuition through composition
+- See immediate results from queries
+- Bridge mathematical theory and code
+
+The functional approach makes probability theory concrete and
+explorable.
+
+Comparison with Alternatives
+----------------------------
+Unlike traditional statistical libraries (R, NumPy), Roulette works
+with distributions directly rather than samples. Unlike full PPLs
+(Stan, PyMC), it remains lightweight and embedded in Scheme. This
+positions it ideally for:
+- Rapid prototyping
+- Teaching and learning
+- Functional programming applications
+
+Cross-Dialect Porting Insights
+-------------------------------
+Porting from Racket to Guile revealed interesting challenges:
+- Module system differences
+- Record type variations (struct vs SRFI-9)
+- Contract system simplification
+- Syntax transformer adaptations
+
+These lessons benefit the broader Scheme community by documenting
+cross-implementation techniques.
+
+Conclusion
+----------
+Guile Roulette demonstrates that probability programming can be both
+theoretically sound and practically useful without heavy machinery.
+The library is production-ready with 25 passing tests, comprehensive
+org-mode documentation, and working examples.
+
+Future work includes Monte Carlo inference engines, additional
+distributions, and integration with Guile's numerical ecosystem.
+
+The project is open source and contributions are welcome.
+#+end_example
+
+* Presentation Checklist
+
+** Before Submission
+
+- [ ] Review PRESENTATION.org slides
+- [ ] Test beamer export: =C-c C-e l P=
+- [ ] Prepare live demo script
+- [ ] Create backup slides for Q&A
+- [ ] Test examples in fresh Guile session
+- [ ] Prepare GitHub repo showcase
+
+** Technical Requirements
+
+- [ ] Laptop with Guile 3.0+ installed
+- [ ] Working examples pre-tested
+- [ ] PDF slides as backup
+- [ ] Screen recording of demos (backup)
+- [ ] Conference-compatible display adapter
+
+** Promotional Materials
+
+- [ ] Project poster (for poster sessions)
+- [ ] Handout with key code examples
+- [ ] QR code to GitHub repository
+- [ ] Business cards with contact info
+
+* Demo Script for Live Coding
+
+** Setup (2 minutes)
+
+#+begin_src scheme
+;; Load library
+(use-modules (roulette))
+
+;; Show it works
+(display "Guile Roulette loaded!\n")
+#+end_src
+
+** Demo 1: Simple Distributions (5 minutes)
+
+#+begin_src scheme
+;; Fair coin
+(define fair-coin
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (x) 0.5)))
+
+(define dens (density fair-coin))
+(dens #t)  ; Show: 0.5
+(dens #f)  ; Show: 0.5
+
+;; Biased coin
+(define biased
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (x) (if x 0.7 0.3))))
+
+(define bd (density biased))
+(bd #t)  ; Show: 0.7
+#+end_src
+
+** Demo 2: Random Variables (5 minutes)
+
+#+begin_src scheme
+;; Create random variable
+(define-measurable (coin-flip)
+  fair-coin)
+
+;; Infer its distribution
+(define flip-measure (infer coin-flip))
+
+;; Query
+(define flip-dens (density flip-measure))
+(flip-dens #t)  ; Show: 0.5
+#+end_src
+
+** Demo 3: Real Application (5 minutes)
+
+#+begin_src scheme
+;; Component reliability
+(define component-lifetime
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (real? x) (>= x 0))))
+   (lambda (x) (* 0.001 (exp (* -0.001 x))))))
+
+(define lt-dens (density component-lifetime))
+
+;; Probability density at different times
+(lt-dens 500)   ; At 500 hours
+(lt-dens 1000)  ; At mean lifetime
+(lt-dens 2000)  ; Well past mean
+#+end_src
+
+* Post-Conference Activities
+
+** Share Materials
+
+- Upload slides to GitHub
+- Blog post about experience
+- Video recording (if allowed)
+- Update documentation with feedback
+
+** Engage Community
+
+- Follow up with interested attendees
+- Create issues for feature requests
+- Invite collaborators
+- Plan next steps
+
+** Publication Opportunities
+
+- Workshop proceedings paper
+- Extended journal article
+- Tutorial paper for educational venue
+- Blog series on implementation
+
+* Potential Co-Authors
+
+Consider inviting:
+- Original Racket roulette author (Ryan Culpepper)
+- Guile community members
+- Collaborators from this project
+- Educators using the library
+
+* Budget Estimate
+
+** Conference Costs
+
+- Registration: $300-600
+- Travel: $500-1500 (depending on location)
+- Accommodation: $150-300/night
+- Meals: $50-100/day
+
+** Total: ~$1500-3000 per conference
+
+** Funding Sources
+
+- Conference travel grants
+- Company sponsorship (@defrecord)
+- Scheme Foundation
+- Open source foundations

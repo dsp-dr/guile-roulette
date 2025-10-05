@@ -26,12 +26,20 @@
 ** Installation
 
 #+begin_src shell
-git clone <repository-url>
+git clone https://github.com/dsp-dr/guile-roulette.git
 cd guile-roulette
 gmake           # Build
 gmake test      # Run tests
 gmake install   # Install (optional)
 #+end_src
+
+** Building Presentation
+
+#+begin_src shell
+gmake pdf       # Uses Emacs batch mode
+#+end_src
+
+Or interactively: Open =PRESENTATION.org= in Emacs and press =C-c C-e l P=
 
 ** Basic Usage
 

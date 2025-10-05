@@ -12,7 +12,7 @@ SOURCES := roulette/core.scm \
 
 COMPILED := $(SOURCES:.scm=.go)
 
-.PHONY: all clean install test check
+.PHONY: all clean install test check docs pdf
 
 all: $(COMPILED)
 
@@ -26,7 +26,7 @@ roulette/inference.go: roulette/inference.scm roulette/core.go
 roulette.go: roulette.scm roulette/core.go roulette/inference.go
 	$(GUILD) compile -L . -o $@ $<
 
-clean:
+clean: clean-docs
 	rm -f $(COMPILED)
 	rm -f tests/*.log
 	find . -name "*.go" -delete
@@ -45,3 +45,23 @@ check: test
 .PHONY: repl
 repl: all
 	$(GUILE) -L .
+
+# Documentation targets
+.PHONY: docs pdf presentation
+docs: pdf
+
+pdf: PRESENTATION.pdf
+
+presentation: PRESENTATION.pdf
+
+PRESENTATION.pdf: PRESENTATION.org
+	@echo "Exporting presentation to PDF with Emacs..."
+	emacs --batch \
+		--eval "(require 'org)" \
+		--eval "(require 'ox-beamer)" \
+		--visit=PRESENTATION.org \
+		--funcall org-beamer-export-to-pdf
+
+clean-docs:
+	rm -f PRESENTATION.pdf PRESENTATION.tex
+	rm -f *.aux *.log *.nav *.out *.snm *.toc *.vrb

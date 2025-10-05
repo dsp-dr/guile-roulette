@@ -9,6 +9,18 @@
 # Test logs
 *.log
 
+# LaTeX/Beamer output
+*.pdf
+*.tex
+*.aux
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.fdb_latexmk
+*.fls
+
 # Emacs
 *~
 \#*\#

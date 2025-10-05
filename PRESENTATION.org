@@ -1,0 +1,639 @@
+#+TITLE: Guile Roulette: Probability and Measure Theory in Scheme
+#+AUTHOR: Daria Pascal
+#+EMAIL: dpascal@defrecord.com
+#+DATE: 2026
+#+STARTUP: beamer
+#+LATEX_CLASS: beamer
+#+LATEX_CLASS_OPTIONS: [presentation,aspectratio=169]
+#+BEAMER_THEME: default
+#+OPTIONS: H:2 toc:t num:t
+#+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
+#+LATEX_HEADER: \usepackage{unicode-math}
+#+LATEX_HEADER: \usepackage{fontspec}
+
+* Introduction
+
+** Why Probability in Scheme?
+
+*** Functional programming + probability = powerful modeling :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :END:
+
+- Clean abstraction for random variables
+- Composable distributions
+- First-class functions for transformations
+- REPL-driven exploration
+
+*** Example: A simple coin flip
+#+begin_src scheme
+(define-measurable (coin)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome) 0.5)))
+#+end_src
+
+** What is Roulette?
+
+*** Three Pillars :B_columns:
+    :PROPERTIES:
+    :BEAMER_env: columns
+    :END:
+
+**** Measurable Spaces :B_block:
+     :PROPERTIES:
+     :BEAMER_env: block
+     :BEAMER_col: 0.3
+     :END:
+Define domains of valid values
+
+#+begin_src scheme
+(make-measurable-space
+  integer?)
+#+end_src
+
+**** Measures :B_block:
+     :PROPERTIES:
+     :BEAMER_env: block
+     :BEAMER_col: 0.3
+     :END:
+Assign probabilities
+
+#+begin_src scheme
+(make-measure
+  space
+  density-fn)
+#+end_src
+
+**** Random Variables :B_block:
+     :PROPERTIES:
+     :BEAMER_env: block
+     :BEAMER_col: 0.3
+     :END:
+Symbolic representations
+
+#+begin_src scheme
+(define-measurable
+  (x) measure)
+#+end_src
+
+** History and Motivation
+
+- Originally developed for Racket by Ryan Culpepper
+- Brings measure-theoretic probability to Scheme
+- Now available for Guile 3!
+
+*** Key Features :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :END:
+- [X] Discrete and continuous distributions
+- [X] Type-safe measurable spaces
+- [X] Composable abstractions
+- [X] Full test coverage (25 tests)
+
+* Core Concepts
+
+** Measurable Spaces: Defining Domains
+
+*** What are they?
+A measurable space defines "what values are possible"
+
+*** Examples
+#+begin_src scheme
+;; Dice outcomes: {1,2,3,4,5,6}
+(define die-space
+  (make-measurable-space
+   (lambda (x)
+     (and (integer? x) (<= 1 x 6)))))
+
+;; Unit interval: [0,1]
+(define unit-interval
+  (make-measurable-space
+   (lambda (x)
+     (and (real? x) (<= 0 x 1)))))
+#+end_src
+
+** Measures: Assigning Probabilities
+
+*** Discrete Example: Fair Die
+#+begin_src scheme
+(define fair-die
+  (make-measure
+   die-space
+   (lambda (n) (/ 1 6))))  ; Each outcome: 1/6
+
+(define dens (density fair-die))
+(dens 3)  ; ⇒ 1/6
+#+end_src
+
+*** Continuous Example: Exponential
+#+begin_src scheme
+(define (exponential λ)
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (>= x 0)))
+   (lambda (x) (* λ (exp (* (- λ) x))))))
+#+end_src
+
+** Random Variables with define-measurable
+
+*** Creating Independent Variables
+
+#+begin_src scheme
+;; Two independent dice
+(define-measurable* (die1 die2)
+  (make-measure
+   die-space
+   (lambda (n) (/ 1 6))))
+
+(not (eq? die1 die2))  ; ⇒ #t (different variables)
+#+end_src
+
+*** Creating Shared Variables
+
+#+begin_src scheme
+;; x, y, z all refer to same random variable
+(define-measurable (x y z)
+  (uniform-distribution 0 1))
+
+(eq? x y)  ; ⇒ #t (same variable)
+#+end_src
+
+* Live Demo
+
+** Interactive Exploration at the REPL
+
+*** Loading the library
+#+begin_src scheme
+(use-modules (roulette))
+#+end_src
+
+*** Creating and querying distributions
+#+begin_src scheme
+;; Biased coin: 70% heads
+(define biased-coin
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome) (if outcome 0.7 0.3))))
+
+(define dens (density biased-coin))
+(dens #t)   ; ⇒ 0.7
+(dens #f)   ; ⇒ 0.3
+#+end_src
+
+** Building Complex Models
+
+*** Mixture Distribution
+#+begin_src scheme
+(define (mixture p dist1 dist2)
+  (let ((d1 (density dist1))
+        (d2 (density dist2)))
+    (make-measure
+     (support dist1)
+     (lambda (x)
+       (+ (* p (d1 x))
+          (* (- 1 p) (d2 x)))))))
+
+;; 60% exponential(1) + 40% exponential(0.5)
+(define mixed
+  (mixture 0.6
+           (exponential-distribution 1)
+           (exponential-distribution 0.5)))
+#+end_src
+
+** Querying Support
+
+*** What values have positive probability?
+
+#+begin_src scheme
+(define coin-measure
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (x) 0.5)))
+
+(define coin-support (support coin-measure))
+
+;; Test membership
+(define in-support?
+  (measurable-space-point coin-support))
+
+(in-support? #t)    ; ⇒ #t
+(in-support? "no")  ; ⇒ #f
+#+end_src
+
+* Applications
+
+** Reliability Engineering
+
+*** Time to Failure Analysis
+
+#+begin_src scheme
+;; Component lifetime: exponential with MTTF=1000h
+(define component-lifetime
+  (exponential-distribution 0.001))
+
+(define dens (density component-lifetime))
+
+;; Probability density at 500 hours
+(dens 500)   ; ⇒ ~0.000606
+
+;; At 2000 hours (well past mean)
+(dens 2000)  ; ⇒ ~0.000135
+#+end_src
+
+*** Key Insight
+Exponential distribution is memoryless: perfect for modeling random failures
+
+** Financial Modeling
+
+*** Daily Stock Returns
+
+#+begin_src scheme
+;; Returns modeled as normal distribution
+;; Mean: 0.05% per day
+;; Volatility: 1.2% per day
+
+(define daily-returns
+  (simple-normal 0.0005 0.012))
+
+(define dens (density daily-returns))
+
+(dens 0)      ; ⇒ ~33.2 (peak at mean)
+(dens 0.02)   ; ⇒ much lower (tail event)
+#+end_src
+
+** Queueing Theory
+
+*** Customer Service Modeling
+
+#+begin_src scheme
+;; Customers arrive: 10 per hour (Poisson)
+;; Inter-arrival times: Exponential(λ=1/6 per min)
+
+(define inter-arrival-time
+  (exponential-distribution (/ 1 6)))
+
+;; Service time: 15 per hour capacity
+(define service-time
+  (exponential-distribution (/ 1 4)))
+
+;; Multiple arrivals
+(define-measurable* (arr1 arr2 arr3 arr4 arr5)
+  inter-arrival-time)
+#+end_src
+
+** Quality Control
+
+*** Manufacturing Defects
+
+#+begin_src scheme
+;; Defect rate: 2%
+(define-measurable (item)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (is-defective)
+     (if is-defective 0.02 0.98))))
+
+;; Batch of 5 independent items
+(define-measurable* (i1 i2 i3 i4 i5)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (defect?) (if defect? 0.02 0.98))))
+
+;; Can analyze: P(at least 1 defect in batch)
+#+end_src
+
+* Implementation
+
+** Architecture Overview
+
+*** Module Structure :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :END:
+
+#+begin_example
+roulette/
+├── core.scm        # Spaces, measures, engines
+└── inference.scm   # Random variables, inference ops
+#+end_example
+
+*** Key Technologies
+- SRFI-9 records for types
+- SRFI-1 for list operations
+- Syntax transformers for macros
+- Hash tables for measurable value tracking
+
+** Type System with SRFI-9
+
+*** Record Types
+
+#+begin_src scheme
+;; Measurable space
+(define-record-type <measurable-space>
+  (make-measurable-space-internal predicate)
+  measurable-space?
+  (predicate measurable-space-predicate))
+
+;; Measure
+(define-record-type <measure>
+  (make-measure-internal space func)
+  measure?
+  (space measure-space)
+  (func measure-func))
+#+end_src
+
+** The Magic of define-measurable
+
+*** Macro Implementation
+
+#+begin_src scheme
+(define-syntax define-measurable
+  (syntax-rules ()
+    ((_ (id ...) measure-expr)
+     (begin
+       (define temp-measure measure-expr)
+       (define id
+         (let ((val (gensym "measurable")))
+           (register-measurable! 'id val temp-measure)
+           val))
+       ...))))
+#+end_src
+
+*** What it does:
+1. Creates unique symbols for each variable
+2. Registers mapping: symbol → measure
+3. Enables =infer= to retrieve measures
+
+** Testing Strategy
+
+*** Comprehensive SRFI-64 Test Suite
+
+#+begin_example
+Tests Coverage:
+[X] 13 core type tests
+[X] 12 inference operation tests
+[X] Total: 25 passing tests
+#+end_example
+
+*** Example Test
+
+#+begin_src scheme
+(test-assert "exponential density non-negative"
+  (let* ((exp-dist (exponential-distribution 1))
+         (dens (density exp-dist)))
+    (and (>= (dens 0) 0)
+         (>= (dens 1) 0)
+         (>= (dens 5) 0))))
+#+end_src
+
+* Comparison with Other Approaches
+
+** vs. Statistical Libraries
+
+*** Traditional Approach :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :END:
+- Sample-based (generate random numbers)
+- Imperative style
+- Hidden state (RNG)
+
+*** Roulette Approach :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :BEAMER_col: green
+    :END:
+- Distribution-based (work with measures)
+- Functional style
+- Explicit probability representation
+
+** vs. Probabilistic Programming Languages
+
+*** PPLs (Stan, PyMC, etc.) :B_columns:
+    :PROPERTIES:
+    :BEAMER_env: columns
+    :END:
+
+**** Advantages :B_block:
+     :PROPERTIES:
+     :BEAMER_env: block
+     :BEAMER_col: 0.48
+     :END:
+- Inference algorithms (MCMC, etc.)
+- Bayesian workflow
+- Rich ecosystem
+
+**** Disadvantages :B_block:
+     :PROPERTIES:
+     :BEAMER_env: block
+     :BEAMER_col: 0.48
+     :END:
+- Complex setup
+- Domain-specific language
+- Less flexible
+
+*** Roulette Position
+Lightweight, embedded in Scheme, perfect for:
+- Teaching probability
+- Quick prototyping
+- Functional modeling
+
+** Unique Advantages
+
+*** Why Choose Guile Roulette? :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :END:
+
+1. *Pure Functional*: No hidden state
+2. *Composable*: Build complex from simple
+3. *Exploratory*: REPL-driven development
+4. *Embedded*: Full Scheme at your disposal
+5. *Portable*: Works anywhere Guile runs
+6. *Educational*: Clean abstraction of measure theory
+
+* Future Directions
+
+** Planned Enhancements
+
+*** Short Term (v0.2)
+- More built-in distributions (Beta, Gamma, etc.)
+- Convolution operations
+- Better performance for large models
+
+*** Medium Term (v0.3)
+- Monte Carlo sampling engine
+- Integration with Guile numerics
+- Visualization helpers
+
+*** Long Term (v1.0)
+- MCMC inference
+- Automatic differentiation
+- Probabilistic programming DSL
+
+** Community and Contributions
+
+*** Get Involved! :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :END:
+
+*Repository*: =https://github.com/dsp-dr/guile-roulette=
+
+*Ways to contribute*:
+- Add distributions
+- Improve documentation
+- Share use cases
+- Report bugs
+- Write tutorials
+
+*** Current Status
+- [X] Core API complete
+- [X] Full test coverage
+- [X] Comprehensive docs
+- Ready for production use!
+
+** Educational Applications
+
+*** Perfect for Teaching
+
+*Probability Theory Course*:
+- Hands-on exploration of distributions
+- Visualize density functions
+- Build intuition with REPL
+
+*Functional Programming Course*:
+- Real-world FP application
+- Higher-order functions
+- Type abstractions
+
+*Statistics Course*:
+- From theory to practice
+- Computational experiments
+- Bridge math and code
+
+* Conclusion
+
+** What We've Learned
+
+*** Core Concepts :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :END:
+- Measurable spaces define domains
+- Measures assign probabilities
+- Random variables are symbolic
+
+*** Practical Skills :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :END:
+- Creating distributions
+- Querying densities and support
+- Building complex models
+
+** Try It Yourself!
+
+*** Getting Started
+
+#+begin_src shell
+git clone https://github.com/dsp-dr/guile-roulette.git
+cd guile-roulette
+gmake && gmake test
+guile -L . examples/basic.scm
+#+end_src
+
+*** Resources
+- =TUTORIAL.org= - Comprehensive guide
+- =API.org= - Quick reference
+- =roulette.org= - Full documentation
+
+** Questions?
+
+*** Contact :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :END:
+
+*Email*: dpascal@defrecord.com
+
+*GitHub*: github.com/dsp-dr/guile-roulette
+
+*Issues/PRs*: Always welcome!
+
+*** Thank You! :B_block:
+    :PROPERTIES:
+    :BEAMER_env: block
+    :BEAMER_col: green
+    :END:
+
+Happy Probabilistic Programming! 
+
+* Backup Slides
+
+** Complete API Summary
+
+*** Spaces
+#+begin_src scheme
+(make-measurable-space predicate)
+(measurable-space-point space)
+(immutable-set/c element-pred)
+#+end_src
+
+*** Measures
+#+begin_src scheme
+(make-measure space density-fn)
+(support measure)
+(density measure)
+#+end_src
+
+*** Random Variables
+#+begin_src scheme
+(define-measurable (x) measure)
+(define-measurable* (x y) measure)
+(infer random-variable)
+#+end_src
+
+** Common Distribution Patterns
+
+*** Discrete Uniform
+#+begin_src scheme
+(define (discrete-uniform values)
+  (let ((n (length values)))
+    (make-measure
+     (make-measurable-space
+      (lambda (x) (member x values)))
+     (lambda (x) (/ 1 n)))))
+#+end_src
+
+*** Truncated Distribution
+#+begin_src scheme
+(define (truncate dist lower upper)
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (<= lower x upper)))
+   (lambda (x)
+     (if (<= lower x upper)
+         ((density dist) x)
+         0))))
+#+end_src
+
+** Performance Characteristics
+
+*** Complexity
+- Space creation: O(1)
+- Measure creation: O(1)
+- Density query: O(1) + cost of density function
+- Support query: O(1)
+
+*** Memory Usage
+- Minimal overhead (closures + records)
+- No sampling = no storage of samples
+- Lazy evaluation possible
+
+*** Optimization Tips
+- Cache density functions
+- Use specialized numeric libraries
+- Consider compilation with =guild=

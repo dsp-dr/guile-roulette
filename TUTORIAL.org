@@ -1,0 +1,810 @@
+#+TITLE: Guile Roulette Tutorial: From First Steps to Advanced Probability
+#+AUTHOR: guile-roulette contributors
+#+DATE: 2025-10-04
+#+STARTUP: showall
+#+OPTIONS: toc:3 num:t
+
+* Introduction
+
+Welcome to the guile-roulette tutorial! This guide will take you from basic concepts to advanced probability modeling using measure theory in Guile Scheme.
+
+** What is Roulette?
+
+Roulette is a library for working with probability distributions and measure theory. It provides:
+
+- A clean abstraction for measurable spaces and measures
+- Tools for defining random variables
+- Operations for querying probability distributions
+- Support for both discrete and continuous distributions
+
+** Prerequisites
+
+- Basic knowledge of Scheme/Guile
+- Understanding of functions and lambdas
+- Familiarity with probability concepts (helpful but not required)
+
+** Installation
+
+#+begin_src shell
+git clone https://github.com/dsp-dr/guile-roulette.git
+cd guile-roulette
+gmake
+gmake test
+#+end_src
+
+* Chapter 1: Measurable Spaces
+
+** What is a Measurable Space?
+
+A measurable space defines a domain of possible values. Think of it as answering the question: "What values are valid in this space?"
+
+** Your First Measurable Space
+
+#+begin_src scheme
+(use-modules (roulette))
+
+;; Create a space for all real numbers
+(define real-space (make-measurable-space real?))
+
+;; Get the predicate that tests membership
+(define is-real? (measurable-space-point real-space))
+
+;; Test values
+(is-real? 3.14)   ; ⇒ #t
+(is-real? "text") ; ⇒ #f
+#+end_src
+
+** Common Measurable Spaces
+
+#+begin_src scheme
+;; Integers
+(define int-space (make-measurable-space integer?))
+
+;; Natural numbers (non-negative integers)
+(define nat-space
+  (make-measurable-space
+   (lambda (x) (and (integer? x) (>= x 0)))))
+
+;; Numbers in a range [0, 1]
+(define unit-interval
+  (make-measurable-space
+   (lambda (x) (and (real? x) (<= 0 x 1)))))
+
+;; Dice outcomes {1,2,3,4,5,6}
+(define die-space
+  (make-measurable-space
+   (lambda (x) (and (integer? x) (<= 1 x 6)))))
+#+end_src
+
+** Exercise 1.1
+
+Create a measurable space for:
+1. Even integers
+2. Positive real numbers
+3. Letters 'a' through 'z'
+
+#+begin_src scheme
+;; Solution 1: Even integers
+(define even-space
+  (make-measurable-space
+   (lambda (x) (and (integer? x) (even? x)))))
+
+;; Solution 2: Positive reals
+(define positive-reals
+  (make-measurable-space
+   (lambda (x) (and (real? x) (> x 0)))))
+
+;; Solution 3: Lowercase letters
+(define lowercase-letters
+  (make-measurable-space
+   (lambda (c) (and (char? c)
+                    (char<=? #\a c #\z)))))
+#+end_src
+
+* Chapter 2: Measures and Probability Densities
+
+** What is a Measure?
+
+A measure assigns a "size" or "probability mass" to sets in a measurable space. For probability, this represents how likely different values are.
+
+** Creating Your First Measure
+
+#+begin_src scheme
+;; A fair coin: both outcomes equally likely
+(define fair-coin
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome) 0.5)))  ; 50% for each
+
+;; Query the density at a point
+(define coin-density (density fair-coin))
+(coin-density #t)  ; ⇒ 0.5
+(coin-density #f)  ; ⇒ 0.5
+#+end_src
+
+** Biased Coin
+
+#+begin_src scheme
+;; A biased coin: 70% heads, 30% tails
+(define biased-coin
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome)
+     (if outcome
+         0.7  ; P(heads) = 0.7
+         0.3))))  ; P(tails) = 0.3
+
+(define bc-density (density biased-coin))
+(bc-density #t)  ; ⇒ 0.7
+(bc-density #f)  ; ⇒ 0.3
+#+end_src
+
+** Fair Die
+
+#+begin_src scheme
+;; Each outcome has probability 1/6
+(define fair-die
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (integer? x) (<= 1 x 6))))
+   (lambda (n) (/ 1 6))))
+
+(define die-density (density fair-die))
+(die-density 1)  ; ⇒ 1/6
+(die-density 6)  ; ⇒ 1/6
+#+end_src
+
+** Exercise 2.1
+
+Create measures for:
+1. A biased die where 6 comes up 50% of the time
+2. A three-sided die (values 1, 2, 3)
+3. A coin that always comes up heads
+
+#+begin_src scheme
+;; Solution 1: Biased die (6 is special)
+(define loaded-die
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (integer? x) (<= 1 x 6))))
+   (lambda (n)
+     (if (= n 6)
+         0.5           ; P(6) = 50%
+         (/ 0.5 5)))))  ; Others share remaining 50%
+
+;; Solution 2: Three-sided die
+(define three-sided-die
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (integer? x) (<= 1 x 3))))
+   (lambda (n) (/ 1 3))))
+
+;; Solution 3: Always heads
+(define always-heads
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome) (if outcome 1.0 0.0))))
+#+end_src
+
+* Chapter 3: Continuous Distributions
+
+** Exponential Distribution
+
+The exponential distribution models waiting times and has density λe^(-λx) for x ≥ 0.
+
+#+begin_src scheme
+(define (exponential-distribution lambda)
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (real? x) (>= x 0))))
+   (lambda (x)
+     (* lambda (exp (* (- lambda) x))))))
+
+;; Create exponential with rate λ=2
+(define exp-dist (exponential-distribution 2))
+(define exp-dens (density exp-dist))
+
+(exp-dens 0)    ; ⇒ 2.0
+(exp-dens 0.5)  ; ⇒ ~0.736
+(exp-dens 1)    ; ⇒ ~0.271
+#+end_src
+
+** Uniform Distribution
+
+Equal probability density over an interval [a, b].
+
+#+begin_src scheme
+(define (uniform-distribution a b)
+  (let ((width (- b a)))
+    (make-measure
+     (make-measurable-space
+      (lambda (x) (and (real? x) (<= a x b))))
+     (lambda (x) (/ 1 width)))))
+
+;; Uniform on [0, 1]
+(define unit-uniform (uniform-distribution 0 1))
+(define uu-dens (density unit-uniform))
+(uu-dens 0.5)  ; ⇒ 1.0
+
+;; Uniform on [-5, 5]
+(define sym-uniform (uniform-distribution -5 5))
+(define su-dens (density sym-uniform))
+(su-dens 0)    ; ⇒ 0.1
+#+end_src
+
+** Gaussian (Normal) Approximation
+
+A simplified normal-like distribution:
+
+#+begin_src scheme
+(define (simple-normal mu sigma)
+  (make-measure
+   (make-measurable-space real?)
+   (lambda (x)
+     (let* ((z (/ (- x mu) sigma))
+            (normalization (/ 1 (* sigma (sqrt (* 2 3.14159)))))
+            (exponent (* -0.5 z z)))
+       (* normalization (exp exponent))))))
+
+;; Standard normal (μ=0, σ=1)
+(define std-normal (simple-normal 0 1))
+(define sn-dens (density std-normal))
+
+(sn-dens 0)    ; ⇒ ~0.399 (peak at mean)
+(sn-dens 1)    ; ⇒ ~0.242
+(sn-dens -1)   ; ⇒ ~0.242 (symmetric)
+#+end_src
+
+** Exercise 3.1
+
+Implement:
+1. A triangular distribution on [0, 1] with peak at 0.5
+2. A truncated exponential (exponential but limited to [0, 5])
+
+#+begin_src scheme
+;; Solution 1: Triangular distribution
+(define triangular-dist
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (real? x) (<= 0 x 1))))
+   (lambda (x)
+     (if (<= x 0.5)
+         (* 4 x)           ; Rising from 0 to 1
+         (* 4 (- 1 x)))))) ; Falling from 1 to 0
+
+;; Solution 2: Truncated exponential
+(define truncated-exp
+  (let ((norm-const 0.993))  ; Normalization constant
+    (make-measure
+     (make-measurable-space
+      (lambda (x) (and (real? x) (<= 0 x 5))))
+     (lambda (x)
+       (/ (exp (- x)) norm-const)))))
+#+end_src
+
+* Chapter 4: Random Variables with define-measurable
+
+** What are Measurable Values?
+
+Measurable values are symbolic representations of random variables. Think of them as "names" for random outcomes.
+
+** Creating a Single Random Variable
+
+#+begin_src scheme
+;; Define a random variable following a fair coin distribution
+(define-measurable (coin-flip)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome) 0.5)))
+
+;; Now 'coin-flip' is a symbolic random variable
+;; We can query its distribution
+(define flip-measure (infer coin-flip))
+(define flip-density (density flip-measure))
+(flip-density #t)  ; ⇒ 0.5
+#+end_src
+
+** Multiple Independent Random Variables
+
+Use =define-measurable*= to create independent random variables:
+
+#+begin_src scheme
+;; Two independent die rolls
+(define-measurable* (die1 die2)
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (integer? x) (<= 1 x 6))))
+   (lambda (n) (/ 1 6))))
+
+;; They are distinct random variables
+(not (eq? die1 die2))  ; ⇒ #t
+#+end_src
+
+** Shared Random Variables
+
+Use =define-measurable= (without *) to create shared references:
+
+#+begin_src scheme
+;; x, y, and z all refer to the same random variable
+(define-measurable (x y z)
+  (make-measure
+   (make-measurable-space real?)
+   (lambda (v) (exp (* -0.5 v v)))))
+
+(eq? x y)  ; ⇒ #t (same variable)
+#+end_src
+
+** Practical Example: Monte Carlo Estimation
+
+#+begin_src scheme
+;; Simulate a simple random walk
+(define-measurable* (step1 step2 step3 step4 step5)
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (member x '(-1 +1))))
+   (lambda (step) 0.5)))
+
+;; Each step is an independent ±1 with equal probability
+;; In a simulation, you'd sum: step1 + step2 + step3 + step4 + step5
+#+end_src
+
+** Exercise 4.1
+
+Create:
+1. Three independent standard normal random variables
+2. A Bernoulli random variable with p=0.3
+3. Five independent uniform [0,1] random variables
+
+#+begin_src scheme
+;; Solution 1: Three independent normals
+(define-measurable* (norm1 norm2 norm3)
+  (simple-normal 0 1))
+
+;; Solution 2: Bernoulli(0.3)
+(define-measurable (bernoulli-var)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome) (if outcome 0.3 0.7))))
+
+;; Solution 3: Five independent uniforms
+(define-measurable* (u1 u2 u3 u4 u5)
+  (uniform-distribution 0 1))
+#+end_src
+
+* Chapter 5: Working with Support
+
+** What is Support?
+
+The support of a measure is the set of values that have positive probability.
+
+#+begin_src scheme
+;; Get the support of a measure
+(define coin-measure
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (x) 0.5)))
+
+(define coin-support (support coin-measure))
+
+;; The support is a measurable space
+(measurable-space? coin-support)  ; ⇒ #t
+
+;; Test membership in support
+(define in-support? (measurable-space-point coin-support))
+(in-support? #t)  ; ⇒ #t
+(in-support? #f)  ; ⇒ #t
+#+end_src
+
+** Discrete Support Example
+
+#+begin_src scheme
+(define die-measure
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (integer? x) (<= 1 x 6))))
+   (lambda (n) (/ 1 6))))
+
+(define die-support (support die-measure))
+(define die-in-support? (measurable-space-point die-support))
+
+(die-in-support? 3)   ; ⇒ #t
+(die-in-support? 7)   ; ⇒ #f
+(die-in-support? 2.5) ; ⇒ #f
+#+end_src
+
+** Continuous Support Example
+
+#+begin_src scheme
+(define pos-reals-measure
+  (exponential-distribution 1))
+
+(define exp-support (support pos-reals-measure))
+(define exp-in-support? (measurable-space-point exp-support))
+
+(exp-in-support? 5)    ; ⇒ #t
+(exp-in-support? -1)   ; ⇒ #f
+#+end_src
+
+* Chapter 6: Advanced Patterns
+
+** Mixture Distributions
+
+Combine multiple distributions:
+
+#+begin_src scheme
+(define (mixture-distribution p dist1 dist2)
+  "Create a mixture: p*dist1 + (1-p)*dist2"
+  (let ((dens1 (density dist1))
+        (dens2 (density dist2)))
+    (make-measure
+     (support dist1)  ; Assume same support
+     (lambda (x)
+       (+ (* p (dens1 x))
+          (* (- 1 p) (dens2 x)))))))
+
+;; 60% exponential(1) + 40% exponential(0.5)
+(define mixed-exp
+  (mixture-distribution 0.6
+                       (exponential-distribution 1)
+                       (exponential-distribution 0.5)))
+#+end_src
+
+** Conditional Distributions
+
+Representing conditional probability:
+
+#+begin_src scheme
+(define (conditional-bernoulli prior-heads)
+  "Bernoulli conditioned on a prior probability of heads"
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome)
+     (if outcome prior-heads (- 1 prior-heads)))))
+
+;; If we know the coin is biased towards heads (0.7)
+(define conditioned-coin (conditional-bernoulli 0.7))
+#+end_src
+
+** Truncated Distributions
+
+Limit a distribution to a subset:
+
+#+begin_src scheme
+(define (truncate-distribution measure lower upper)
+  "Truncate a measure to [lower, upper]"
+  (let ((orig-density (density measure)))
+    (make-measure
+     (make-measurable-space
+      (lambda (x) (and (real? x) (<= lower x upper))))
+     (lambda (x)
+       (if (<= lower x upper)
+           (orig-density x)
+           0)))))
+
+;; Standard normal truncated to [-2, 2]
+(define trunc-normal
+  (truncate-distribution
+   (simple-normal 0 1)
+   -2 2))
+#+end_src
+
+** Transformed Distributions
+
+#+begin_src scheme
+(define (transform-distribution measure transform inverse-jacobian)
+  "Transform a measure via a function"
+  (let ((orig-density (density measure)))
+    (make-measure
+     (support measure)
+     (lambda (y)
+       (* (orig-density (transform y))
+          (inverse-jacobian y))))))
+
+;; Example: Square transformation of uniform [0,1]
+;; If X ~ Uniform[0,1], what is distribution of Y = X^2?
+(define squared-uniform
+  (transform-distribution
+   (uniform-distribution 0 1)
+   sqrt                          ; inverse of square
+   (lambda (y) (/ 1 (* 2 (sqrt y))))))  ; |dy/dx|^(-1)
+#+end_src
+
+* Chapter 7: Real-World Applications
+
+** Reliability Engineering: Time to Failure
+
+#+begin_src scheme
+;; Component lifetime follows exponential distribution
+;; Mean time to failure (MTTF) = 1000 hours
+;; λ = 1/MTTF = 0.001
+
+(define component-lifetime
+  (exponential-distribution 0.001))
+
+(define lifetime-dens (density component-lifetime))
+
+;; Probability density at 500 hours
+(lifetime-dens 500)  ; ⇒ ~0.000606
+
+;; Probability density at 2000 hours
+(lifetime-dens 2000) ; ⇒ ~0.000135
+#+end_src
+
+** Quality Control: Defect Rates
+
+#+begin_src scheme
+;; Manufacturing process: 2% defect rate
+(define-measurable (inspected-item)
+  (make-measure
+   (make-measurable-space boolean?)  ; defective or not
+   (lambda (is-defective)
+     (if is-defective 0.02 0.98))))
+
+;; Batch of 5 independent items
+(define-measurable* (item1 item2 item3 item4 item5)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (is-defective)
+     (if is-defective 0.02 0.98))))
+#+end_src
+
+** Financial Modeling: Returns Distribution
+
+#+begin_src scheme
+;; Daily stock returns approximated as normal
+;; Mean return: 0.05% per day
+;; Volatility (std dev): 1.2% per day
+
+(define daily-returns
+  (simple-normal 0.0005 0.012))
+
+(define returns-dens (density daily-returns))
+
+;; Density at 0% return
+(returns-dens 0)      ; ⇒ ~33.2
+
+;; Density at +2% return
+(returns-dens 0.02)   ; ⇒ much lower (tail event)
+#+end_src
+
+** Queueing Theory: Inter-arrival Times
+
+#+begin_src scheme
+;; Customers arrive at average rate of 10 per hour
+;; λ = 10/hour = 1/6 per minute
+
+(define inter-arrival-time
+  (exponential-distribution (/ 1 6)))
+
+;; Multiple arrivals
+(define-measurable* (arrival1 arrival2 arrival3)
+  (exponential-distribution (/ 1 6)))
+#+end_src
+
+* Chapter 8: Best Practices
+
+** Naming Conventions
+
+#+begin_src scheme
+;; Good: descriptive names
+(define-measurable (customer-wait-time)
+  (exponential-distribution 0.1))
+
+(define-measurable* (sensor-reading-1 sensor-reading-2)
+  (simple-normal 20 0.5))
+
+;; Avoid: single letters unless in mathematical context
+;; Bad: (define-measurable (x) ...)
+#+end_src
+
+** Organizing Complex Models
+
+#+begin_src scheme
+;; Group related distributions in modules
+
+;; queueing-model.scm
+(define-module (models queueing)
+  #:use-module (roulette)
+  #:export (inter-arrival service-time))
+
+(define arrival-rate 10)  ; customers per hour
+(define service-rate 15)  ; customers per hour
+
+(define inter-arrival
+  (exponential-distribution arrival-rate))
+
+(define service-time
+  (exponential-distribution service-rate))
+#+end_src
+
+** Testing Distributions
+
+#+begin_src scheme
+(use-modules (srfi srfi-64))
+
+(test-begin "distribution-tests")
+
+;; Test that density is non-negative
+(test-assert "exponential density non-negative"
+  (let* ((exp-dist (exponential-distribution 1))
+         (dens (density exp-dist)))
+    (and (>= (dens 0) 0)
+         (>= (dens 1) 0)
+         (>= (dens 5) 0))))
+
+;; Test that density decreases for exponential
+(test-assert "exponential is decreasing"
+  (let* ((exp-dist (exponential-distribution 1))
+         (dens (density exp-dist)))
+    (> (dens 0) (dens 1))))
+
+(test-end "distribution-tests")
+#+end_src
+
+** Documentation
+
+#+begin_src scheme
+(define (gamma-approximation k theta)
+  "Approximate gamma distribution with shape K and scale THETA.
+
+   The gamma distribution generalizes the exponential distribution.
+   Mean: k*theta
+   Variance: k*theta^2
+
+   Example:
+     (define my-gamma (gamma-approximation 2 3))
+     (define g-dens (density my-gamma))
+     (g-dens 5)  ; => density at x=5"
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (real? x) (> x 0))))
+   (lambda (x)
+     ;; Simplified gamma density (requires gamma function for exactness)
+     (/ (expt x (- k 1))
+        (* (expt theta k) (factorial (- k 1)))))))
+#+end_src
+
+* Chapter 9: Common Pitfalls
+
+** Pitfall 1: Forgetting Normalization
+
+#+begin_src scheme
+;; WRONG: Probabilities don't sum to 1
+(define bad-die
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (integer? x) (<= 1 x 6))))
+   (lambda (n) 1)))  ; All outcomes have density 1!
+
+;; CORRECT: Properly normalized
+(define good-die
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (integer? x) (<= 1 x 6))))
+   (lambda (n) (/ 1 6))))
+#+end_src
+
+** Pitfall 2: Confusing define-measurable variants
+
+#+begin_src scheme
+;; WRONG: Trying to use independent variables
+(define-measurable (x y z)  ; All share same value!
+  (uniform-distribution 0 1))
+;; x, y, z are identical
+
+;; CORRECT: Use * for independence
+(define-measurable* (x y z)
+  (uniform-distribution 0 1))
+;; x, y, z are independent
+#+end_src
+
+** Pitfall 3: Domain Mismatches
+
+#+begin_src scheme
+;; WRONG: Density function doesn't match space
+(define bad-dist
+  (make-measure
+   (make-measurable-space integer?)  ; Space is integers
+   (lambda (x) (exp (* -0.5 x x)))))  ; But density is for reals
+
+;; CORRECT: Match space and density
+(define good-dist
+  (make-measure
+   (make-measurable-space real?)
+   (lambda (x) (exp (* -0.5 x x)))))
+#+end_src
+
+* Chapter 10: Next Steps
+
+** Further Reading
+
+- [[file:API.org][API Reference]] - Complete function reference
+- [[file:roulette.org][Full Documentation]] - Detailed explanations
+- [[https://docs.racket-lang.org/roulette/][Original Racket Roulette]] - Upstream documentation
+
+** Exercise Project: Build a Simulation
+
+Create a simulation system that:
+1. Models customer arrivals (Poisson process)
+2. Models service times (exponential)
+3. Computes waiting times
+4. Analyzes queue lengths
+
+#+begin_src scheme
+;; Your code here!
+(use-modules (roulette))
+
+;; Define your distributions...
+;; Simulate events...
+;; Collect statistics...
+#+end_src
+
+** Contributing
+
+This library is open source. Contributions welcome:
+- Report issues on GitHub
+- Submit pull requests
+- Add more distributions
+- Improve documentation
+
+** Community
+
+Share your work:
+- Present at Scheme workshops
+- Blog about applications
+- Share example code
+
+* Appendix: Quick Reference Card
+
+** Creating Spaces
+
+#+begin_src scheme
+(make-measurable-space predicate)
+(immutable-set/c element-predicate)
+#+end_src
+
+** Creating Measures
+
+#+begin_src scheme
+(make-measure space density-function)
+#+end_src
+
+** Querying Measures
+
+#+begin_src scheme
+(support measure)         ; Get the support space
+(density measure)         ; Get density function
+(measure-space measure)   ; Get underlying space
+#+end_src
+
+** Random Variables
+
+#+begin_src scheme
+(define-measurable (x y) measure)   ; Shared variable
+(define-measurable* (x y) measure)  ; Independent variables
+(infer random-variable)             ; Get measure from variable
+#+end_src
+
+** Common Distributions
+
+#+begin_src scheme
+;; Uniform [a,b]
+(lambda (a b)
+  (make-measure
+   (make-measurable-space (lambda (x) (<= a x b)))
+   (lambda (x) (/ 1 (- b a)))))
+
+;; Exponential(λ)
+(lambda (lambda)
+  (make-measure
+   (make-measurable-space (lambda (x) (>= x 0)))
+   (lambda (x) (* lambda (exp (* (- lambda) x))))))
+
+;; Bernoulli(p)
+(lambda (p)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (x) (if x p (- 1 p)))))
+#+end_src
+
+Happy probabilistic programming! 🎲

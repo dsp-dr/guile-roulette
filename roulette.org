@@ -1,0 +1,429 @@
+#+TITLE: Guile Roulette: Probability and Measure Theory for Guile
+#+AUTHOR: guile-roulette
+#+DATE: 2025-10-04
+#+STARTUP: showall
+#+OPTIONS: toc:3 num:t
+
+* Introduction
+
+=guile-roulette= is a Guile 3 port of Racket's [[https://docs.racket-lang.org/roulette/][roulette]] library, providing primitives for probability theory and measure theory computations.
+
+The library enables working with measurable spaces, measures, and inference operations in a functional style.
+
+* Installation
+
+** Building from Source
+
+#+begin_src shell :eval never
+gmake           # Compile all modules
+gmake test      # Run test suite
+gmake install   # Install to site directory
+#+end_src
+
+** Emacs Integration
+
+The project includes =.dir-locals.el= for Geiser integration. When opening Scheme files in this directory, Geiser will automatically use the correct load path.
+
+* Core Concepts
+
+** Measurable Spaces
+
+A measurable space represents a domain with a predicate that determines membership.
+
+#+begin_src scheme :eval never
+(use-modules (roulette))
+
+;; Create a measurable space for real numbers
+(define real-space (make-measurable-space real?))
+
+;; Check if a value is in the space
+(define point-pred (measurable-space-point real-space))
+(point-pred 3.14)  ; => #t
+(point-pred "foo") ; => #f
+#+end_src
+
+** Measures
+
+A measure maps from a measurable space to a commutative monoid (typically real numbers representing probability mass or density).
+
+#+begin_src scheme :eval never
+;; Create a uniform measure over integers
+(define uniform-measure
+  (make-measure
+   (make-measurable-space integer?)
+   (lambda (n) 1.0)))  ; Constant density
+#+end_src
+
+** Engines
+
+Engines enable inference on measurable values, computing the measure associated with a value.
+
+#+begin_src scheme :eval never
+(define simple-engine
+  (make-engine 'enumeration
+               (lambda (value)
+                 ;; Computation logic here
+                 #f)))
+#+end_src
+
+* API Reference
+
+** Measurable Spaces
+
+*** =make-measurable-space=
+
+#+begin_src scheme :eval never
+(make-measurable-space predicate) → measurable-space?
+#+end_src
+
+Creates a measurable space with the given predicate.
+
+*Parameters:*
+- =predicate= : A predicate function determining membership
+
+*Returns:* A measurable space object
+
+*Example:*
+#+begin_src scheme :eval never
+(define nat-space (make-measurable-space
+                   (lambda (x)
+                     (and (integer? x) (>= x 0)))))
+#+end_src
+
+*** =measurable-space?=
+
+#+begin_src scheme :eval never
+(measurable-space? obj) → boolean?
+#+end_src
+
+Returns =#t= if =obj= is a measurable space.
+
+*** =measurable-space-point=
+
+#+begin_src scheme :eval never
+(measurable-space-point space) → procedure?
+#+end_src
+
+Returns the predicate function for points in =space=.
+
+*** =immutable-set/c=
+
+#+begin_src scheme :eval never
+(immutable-set/c element-predicate) → measurable-space?
+#+end_src
+
+Creates a measurable space for immutable sets (lists) where all elements satisfy =element-predicate=.
+
+*Example:*
+#+begin_src scheme :eval never
+(define int-set-space (immutable-set/c integer?))
+(define pred (measurable-space-point int-set-space))
+(pred '(1 2 3))     ; => #t
+(pred '(1 "a" 3))   ; => #f
+#+end_src
+
+** Measures
+
+*** =make-measure=
+
+#+begin_src scheme :eval never
+(make-measure space density-function) → measure?
+#+end_src
+
+Creates a measure over =space= with the given =density-function=.
+
+*Parameters:*
+- =space= : A measurable space
+- =density-function= : Function mapping space points to density values
+
+*Example:*
+#+begin_src scheme :eval never
+(define exponential-measure
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (real? x) (>= x 0))))
+   (lambda (x) (* 0.5 (exp (* -0.5 x))))))
+#+end_src
+
+*** =measure?=
+
+#+begin_src scheme :eval never
+(measure? obj) → boolean?
+#+end_src
+
+Returns =#t= if =obj= is a measure.
+
+** Inference Operations
+
+*** =define-measurable=
+
+#+begin_src scheme :eval never
+(define-measurable (id ...) measure-expr)
+#+end_src
+
+Binds identifiers to constant measurable values, reflecting a measure into the meta level.
+
+All identifiers share the same underlying value.
+
+*Example:*
+#+begin_src scheme :eval never
+(define-measurable (x y z)
+  (make-measure (make-measurable-space number?)
+                (lambda (n) 1.0)))
+
+;; x, y, z are now measurable values
+#+end_src
+
+*** =define-measurable*=
+
+#+begin_src scheme :eval never
+(define-measurable* (id ...) measure-expr)
+#+end_src
+
+Like =define-measurable=, but creates distinct measurable values for each identifier.
+
+*Example:*
+#+begin_src scheme :eval never
+(define-measurable* (a b)
+  (make-measure (make-measurable-space boolean?)
+                (lambda (x) 0.5)))
+
+;; a and b are distinct measurable values
+(not (eq? a b))  ; => #t
+#+end_src
+
+*** =infer=
+
+#+begin_src scheme :eval never
+(infer value [#:engine engine] [#:lazy? lazy?]) → measure?
+#+end_src
+
+Reifies a measure from the meta level, returning the measure associated with a measurable value.
+
+*Parameters:*
+- =value= : A measurable value (created with =define-measurable= or =define-measurable*=)
+- =engine= : Optional inference engine (default: enumeration)
+- =lazy?= : Enable lazy evaluation (default: =#f=)
+
+*Example:*
+#+begin_src scheme :eval never
+(define-measurable (coin)
+  (make-measure (make-measurable-space boolean?)
+                (lambda (b) 0.5)))
+
+(define coin-measure (infer coin))
+#+end_src
+
+*** =support=
+
+#+begin_src scheme :eval never
+(support measure) → measurable-space?
+#+end_src
+
+Returns the largest set with positive measure.
+
+For lazy measures, may return a superset of the actual support.
+
+*Example:*
+#+begin_src scheme :eval never
+(define m (make-measure
+           (make-measurable-space integer?)
+           (lambda (n) 1.0)))
+
+(define s (support m))
+(measurable-space? s)  ; => #t
+#+end_src
+
+*** =density=
+
+#+begin_src scheme :eval never
+(density measure) → procedure?
+#+end_src
+
+Returns the derivative (density function) of a measure.
+
+The returned function maps measurable space points to density values.
+
+*Example:*
+#+begin_src scheme :eval never
+(define normal-approx
+  (make-measure
+   (make-measurable-space real?)
+   (lambda (x) (exp (* -0.5 x x)))))
+
+(define dens (density normal-approx))
+(dens 0)   ; => 1.0
+(dens 1)   ; => ~0.606
+#+end_src
+
+* Examples
+
+** Discrete Probability
+
+#+begin_src scheme :eval never
+(use-modules (roulette))
+
+;; Fair coin flip
+(define-measurable (coin)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (result)
+     0.5)))  ; 50% probability for each outcome
+
+;; Biased die
+(define die-space (make-measurable-space
+                   (lambda (x)
+                     (and (integer? x) (<= 1 x 6)))))
+
+(define biased-die
+  (make-measure
+   die-space
+   (lambda (n)
+     (if (= n 6)
+         0.5          ; 50% chance of rolling 6
+         0.1))))      ; 10% for others
+#+end_src
+
+** Continuous Distributions
+
+#+begin_src scheme :eval never
+;; Exponential distribution with rate λ=2
+(define exponential-dist
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (real? x) (>= x 0))))
+   (lambda (x)
+     (* 2 (exp (* -2 x))))))
+
+;; Query density at specific points
+(define dens (density exponential-dist))
+(dens 0)    ; => 2.0
+(dens 0.5)  ; => ~0.736
+#+end_src
+
+** Using Inference
+
+#+begin_src scheme :eval never
+(define-measurable (observation)
+  (make-measure
+   (make-measurable-space real?)
+   (lambda (x) (exp (* -0.5 x x)))))
+
+;; Reify the measure
+(define obs-measure (infer observation))
+
+;; Get the support
+(define obs-support (support obs-measure))
+
+;; Get density function
+(define obs-density (density obs-measure))
+#+end_src
+
+* Testing
+
+Run the complete test suite:
+
+#+begin_src shell :eval never
+gmake test
+#+end_src
+
+Individual test modules:
+
+#+begin_src shell :eval never
+guile -L . tests/test-core.scm
+guile -L . tests/test-inference.scm
+#+end_src
+
+** Test Coverage
+
+The test suite uses SRFI-64 and covers:
+
+- Measurable space creation and predicates
+- Measure construction and access
+- Engine creation and computation
+- =define-measurable= and =define-measurable*= macros
+- =infer=, =support=, and =density= operations
+- Contract predicates (=immutable-set/c=)
+
+* Development
+
+** REPL Usage
+
+Start an interactive REPL with the library loaded:
+
+#+begin_src shell :eval never
+gmake repl
+#+end_src
+
+Or manually:
+
+#+begin_src shell :eval never
+guile -L .
+#+end_src
+
+Then:
+
+#+begin_src scheme :eval never
+(use-modules (roulette))
+
+;; Experiment with the API
+(define s (make-measurable-space number?))
+#+end_src
+
+** Emacs/Geiser Workflow
+
+1. Open any =.scm= file in the project
+2. Start Geiser: =M-x run-geiser=
+3. Select "Guile" as the implementation
+4. The =.dir-locals.el= will automatically set the load path
+
+Evaluate expressions with:
+- =C-x C-e= : Evaluate expression before point
+- =C-c C-k= : Compile and load current buffer
+- =C-c C-z= : Switch to REPL
+
+** Org-Babel Integration
+
+This file includes org-babel support. Evaluate Scheme code blocks with =C-c C-c=.
+
+Setup in your =.emacs= or =init.el=:
+
+#+begin_src emacs-lisp :eval never
+(require 'ob-scheme)
+(setq org-babel-scheme-cmd "guile")
+#+end_src
+
+* Differences from Racket Roulette
+
+This Guile port makes the following adaptations:
+
+1. *Module System*: Uses Guile's =(define-module)= instead of Racket's =#lang=
+2. *Records*: Uses SRFI-9 record types instead of Racket structs
+3. *Contracts*: Simplified contract system (no full =contract/c= support)
+4. *Inference*: Basic enumeration engine (extensible for more sophisticated algorithms)
+5. *Hash Tables*: Uses Guile's native hash table API
+
+The core API remains faithful to the original Racket design.
+
+* Future Enhancements
+
+Potential additions:
+
+- [ ] Monte Carlo inference engines
+- [ ] Markov Chain Monte Carlo (MCMC) sampling
+- [ ] Importance sampling support
+- [ ] Conditional probability operations
+- [ ] More statistical distributions
+- [ ] Integration with Guile's numerical libraries
+- [ ] Lazy measure evaluation optimizations
+- [ ] Symbolic measure manipulation
+
+* License
+
+This is a port of the Racket roulette library. Refer to the original project for licensing information.
+
+* References
+
+- [[https://docs.racket-lang.org/roulette/][Racket Roulette Documentation]]
+- [[https://www.gnu.org/software/guile/manual/][Guile Reference Manual]]
+- [[https://srfi.schemers.org/srfi-64/srfi-64.html][SRFI-64: A Scheme API for test suites]]

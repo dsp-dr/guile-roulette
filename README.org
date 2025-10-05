@@ -1,0 +1,178 @@
+#+TITLE: guile-roulette
+#+AUTHOR: guile-roulette contributors
+#+DATE: 2025-10-04
+
+[[https://img.shields.io/badge/guile-3.0+-blue.svg][https://img.shields.io/badge/guile-3.0+-blue.svg]]
+[[https://img.shields.io/badge/license-MIT-green.svg][https://img.shields.io/badge/license-MIT-green.svg]]
+[[https://img.shields.io/badge/tests-25%20passing-brightgreen.svg][https://img.shields.io/badge/tests-25%20passing-brightgreen.svg]]
+[[https://img.shields.io/badge/docs-org--mode-orange.svg][https://img.shields.io/badge/docs-org--mode-orange.svg]]
+
+* Overview
+
+=guile-roulette= is a Guile 3 port of Racket's [[https://docs.racket-lang.org/roulette/Reference.html][roulette library]], providing primitives for probability theory and measure theory in Scheme.
+
+* Features
+
+- 📊 Measurable spaces and measures
+- 🎲 Discrete and continuous probability distributions
+- 🔍 Inference operations (=infer=, =support=, =density=)
+- 🎯 Lazy and eager evaluation modes
+- 🧪 Comprehensive test suite (SRFI-64)
+- 📝 Full org-mode documentation
+- 🛠️ Emacs/Geiser integration
+
+* Quick Start
+
+** Installation
+
+#+begin_src shell
+git clone <repository-url>
+cd guile-roulette
+gmake           # Build
+gmake test      # Run tests
+gmake install   # Install (optional)
+#+end_src
+
+** Basic Usage
+
+#+begin_src scheme
+(use-modules (roulette))
+
+;; Create a measurable space for integers
+(define int-space (make-measurable-space integer?))
+
+;; Define a fair coin flip
+(define-measurable (coin)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome) 0.5)))
+
+;; Get the measure and query density
+(define m (infer coin))
+(define dens (density m))
+#+end_src
+
+** Running Examples
+
+#+begin_src shell
+guile -L . examples/basic.scm
+#+end_src
+
+* Documentation
+
+- [[file:roulette.org][Complete Documentation]] - Full guide with examples
+- [[file:API.org][API Reference]] - Quick reference for all functions
+- [[file:examples/basic.scm][Basic Examples]] - Executable examples
+
+* Project Structure
+
+#+begin_example
+guile-roulette/
+├── roulette.scm              # Main module
+├── roulette/
+│   ├── core.scm             # Core types (spaces, measures, engines)
+│   └── inference.scm        # Inference operations
+├── tests/
+│   ├── test-core.scm        # Core module tests
+│   └── test-inference.scm   # Inference tests
+├── examples/
+│   └── basic.scm            # Usage examples
+├── roulette.org             # Main documentation
+├── API.org                  # API reference
+├── Makefile                 # Build system (gmake)
+├── .dir-locals.el           # Emacs/Geiser config
+└── .guile                   # Local REPL config
+#+end_example
+
+* API Overview
+
+** Core Types
+
+#+begin_src scheme
+;; Measurable spaces
+(make-measurable-space predicate)
+(measurable-space-point space)
+(immutable-set/c element-predicate)
+
+;; Measures
+(make-measure space density-function)
+(measure-space m)
+(measure-func m)
+
+;; Engines
+(make-engine id compute-function)
+#+end_src
+
+** Inference Operations
+
+#+begin_src scheme
+;; Macros
+(define-measurable (id ...) measure-expr)
+(define-measurable* (id ...) measure-expr)
+
+;; Functions
+(infer value [#:engine eng] [#:lazy? lazy?])
+(support measure)
+(density measure)
+#+end_src
+
+* Testing
+
+#+begin_src shell
+gmake test              # Run all tests
+guile -L . tests/test-core.scm       # Core tests
+guile -L . tests/test-inference.scm  # Inference tests
+#+end_src
+
+Test results:
+- Core module: 13 tests pass ✓
+- Inference module: 12 tests pass ✓
+- Total: 25 tests pass ✓
+
+* Development
+
+** REPL
+
+#+begin_src shell
+gmake repl
+# or
+guile -L .
+#+end_src
+
+** Emacs/Geiser
+
+The project includes =.dir-locals.el= for automatic load path configuration:
+
+1. Open any =.scm= file
+2. =M-x run-geiser=
+3. Select "Guile"
+4. Load path is automatically configured
+
+** Org-Babel
+
+Execute Scheme code in org files with =C-c C-c=:
+
+#+begin_src emacs-lisp :eval never
+(require 'ob-scheme)
+(setq org-babel-scheme-cmd "guile")
+#+end_src
+
+* Differences from Racket
+
+- Uses Guile's module system instead of =#lang=
+- SRFI-9 records instead of Racket structs
+- Simplified contract system
+- Native Guile hash tables
+- Core API remains faithful to original
+
+* License
+
+MIT License - See [[file:LICENSE][LICENSE]] file
+
+This is a port of [[https://docs.racket-lang.org/roulette/][Racket's roulette library]].
+
+* References
+
+- [[https://docs.racket-lang.org/roulette/][Racket Roulette Documentation]]
+- [[https://www.gnu.org/software/guile/manual/][Guile Reference Manual]]
+- [[https://srfi.schemers.org/srfi-64/srfi-64.html][SRFI-64: Test Suites]]

@@ -1,0 +1,232 @@
+#+TITLE: Guile Roulette API Reference
+#+AUTHOR: guile-roulette
+#+DATE: 2025-10-04
+#+STARTUP: overview
+#+OPTIONS: toc:2 num:nil
+
+* Overview
+
+This is a quick reference for the guile-roulette API, ported from [[https://docs.racket-lang.org/roulette/Reference.html][Racket's roulette library]].
+
+* Core Types
+
+** Measurable Spaces
+
+| Function                  | Signature                                  | Description                             |
+|---------------------------+--------------------------------------------+-----------------------------------------|
+| =make-measurable-space=   | =(pred) → measurable-space?=               | Create a measurable space               |
+| =measurable-space?=       | =(obj) → boolean?=                         | Test if obj is a measurable space       |
+| =measurable-space-point=  | =(space) → procedure?=                     | Get predicate for space membership      |
+| =immutable-set/c=         | =(elem-pred) → measurable-space?=          | Create space for sets of elements       |
+
+** Measures
+
+| Function           | Signature                                      | Description                        |
+|--------------------+------------------------------------------------+------------------------------------|
+| =make-measure=     | =(space density-fn) → measure?=                | Create measure over space          |
+| =measure?=         | =(obj) → boolean?=                             | Test if obj is a measure           |
+| =measure-space=    | =(m) → measurable-space?=                      | Get space of measure               |
+| =measure-func=     | =(m) → procedure?=                             | Get density function of measure    |
+
+** Engines
+
+| Function          | Signature                              | Description                           |
+|-------------------+----------------------------------------+---------------------------------------|
+| =make-engine=     | =(id compute-fn) → engine?=            | Create inference engine               |
+| =engine?=         | =(obj) → boolean?=                     | Test if obj is an engine              |
+| =engine-id=       | =(eng) → symbol?=                      | Get engine identifier                 |
+| =engine-compute=  | =(eng) → procedure?=                   | Get engine's compute function         |
+
+* Inference Operations
+
+** Macros
+
+*** =define-measurable=
+
+#+begin_src scheme
+(define-measurable (id ...) measure-expr)
+#+end_src
+
+Binds identifiers to constant measurable values. All identifiers share the same value.
+
+*Example:*
+#+begin_src scheme
+(define-measurable (x y z)
+  (make-measure (make-measurable-space number?)
+                (lambda (n) 1.0)))
+;; x, y, and z are now bound to the same measurable value
+#+end_src
+
+*** =define-measurable*=
+
+#+begin_src scheme
+(define-measurable* (id ...) measure-expr)
+#+end_src
+
+Like =define-measurable=, but creates distinct values for each identifier.
+
+*Example:*
+#+begin_src scheme
+(define-measurable* (a b)
+  (make-measure (make-measurable-space boolean?)
+                (lambda (x) 0.5)))
+;; a and b are distinct measurable values
+#+end_src
+
+** Functions
+
+*** =infer=
+
+#+begin_src scheme
+(infer value [#:engine engine] [#:lazy? lazy?]) → (or/c measure? #f)
+#+end_src
+
+Reifies a measure from the meta level. Returns the measure associated with a measurable value.
+
+*Parameters:*
+- =value= : A measurable value
+- =engine= : Optional inference engine (default: enumeration engine)
+- =lazy?= : Enable lazy evaluation (default: =#f=)
+
+*Example:*
+#+begin_src scheme
+(define-measurable (coin)
+  (make-measure (make-measurable-space boolean?)
+                (lambda (b) 0.5)))
+
+(define m (infer coin))
+#+end_src
+
+*** =support=
+
+#+begin_src scheme
+(support measure) → measurable-space?
+#+end_src
+
+Returns the largest set with positive measure. For lazy measures, may return a superset.
+
+*Example:*
+#+begin_src scheme
+(define m (make-measure
+           (make-measurable-space integer?)
+           (lambda (n) 1.0)))
+
+(define s (support m))  ; Returns the integer space
+#+end_src
+
+*** =density=
+
+#+begin_src scheme
+(density measure) → procedure?
+#+end_src
+
+Returns the derivative (density function) of a measure.
+
+*Example:*
+#+begin_src scheme
+(define exp-measure
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (real? x) (>= x 0))))
+   (lambda (x) (* 2 (exp (* -2 x))))))
+
+(define dens (density exp-measure))
+(dens 0)    ; ⇒ 2.0
+(dens 0.5)  ; ⇒ ~0.736
+#+end_src
+
+* Usage Patterns
+
+** Creating Probability Distributions
+
+*** Discrete Uniform
+
+#+begin_src scheme
+(define fair-die
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (integer? x) (<= 1 x 6))))
+   (lambda (n) (/ 1 6))))
+#+end_src
+
+*** Continuous Exponential
+
+#+begin_src scheme
+(define (exponential-distribution lambda)
+  (make-measure
+   (make-measurable-space
+    (lambda (x) (and (real? x) (>= x 0))))
+   (lambda (x) (* lambda (exp (* (- lambda) x))))))
+#+end_src
+
+*** Bernoulli (Biased Coin)
+
+#+begin_src scheme
+(define (bernoulli p)
+  (make-measure
+   (make-measurable-space boolean?)
+   (lambda (outcome)
+     (if outcome p (- 1 p)))))
+#+end_src
+
+** Working with Measurable Values
+
+#+begin_src scheme
+;; Create multiple independent random variables
+(define-measurable* (x1 x2 x3)
+  (make-measure
+   (make-measurable-space real?)
+   (lambda (v) (exp (* -0.5 v v)))))  ; Normal-like
+
+;; They are distinct values
+(not (eq? x1 x2))  ; ⇒ #t
+
+;; But share the same measure structure
+(define m1 (infer x1))
+(define m2 (infer x2))
+#+end_src
+
+** Custom Inference Engines
+
+#+begin_src scheme
+(define rejection-sampler
+  (make-engine 'rejection-sampling
+               (lambda (value)
+                 ;; Custom inference logic here
+                 (error "Not implemented"))))
+
+(define-measurable (rv)
+  (make-measure
+   (make-measurable-space number?)
+   (lambda (x) (exp (* -0.5 x x)))))
+
+(infer rv #:engine rejection-sampler)
+#+end_src
+
+* Org-Babel Integration
+
+This library works with org-babel. Add to your org file:
+
+#+begin_src emacs-lisp :eval never
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((scheme . t)))
+
+(setq org-babel-scheme-cmd "guile")
+#+end_src
+
+Then execute Scheme blocks with =C-c C-c=:
+
+#+begin_src scheme :eval never
+(use-modules (roulette))
+
+(define space (make-measurable-space integer?))
+(define pred (measurable-space-point space))
+(pred 42)  ; ⇒ #t
+#+end_src
+
+* See Also
+
+- [[file:roulette.org][Main Documentation]]
+- [[file:examples/basic.scm][Basic Examples]]
+- [[https://docs.racket-lang.org/roulette/][Original Racket Documentation]]

@@ -1,0 +1,11 @@
+;;; .guile --- Local Guile configuration for roulette development
+
+;; Add current directory to load path
+(add-to-load-path (dirname (current-filename)))
+
+;; Load the roulette module for interactive development
+(use-modules (roulette))
+
+;; Helpful message
+(display "guile-roulette development environment loaded\n")
+(display "Try: (use-modules (roulette)) for the main API\n")

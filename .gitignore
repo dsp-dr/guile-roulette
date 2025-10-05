@@ -1,0 +1,22 @@
+# Compiled Guile files
+*.go
+*.x
+
+# Cache directories
+.cache/
+*~
+
+# Test logs
+*.log
+
+# Emacs
+*~
+\#*\#
+.\#*
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Auto-compiled files
+auto-compile/

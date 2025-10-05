@@ -1,0 +1,81 @@
+#+TITLE: Contributing to Guile Roulette
+#+AUTHOR: guile-roulette contributors
+
+* Development Workflow
+
+** Building
+
+#+begin_src shell
+gmake           # Build library
+gmake test      # Run tests
+gmake clean     # Clean build artifacts
+#+end_src
+
+** Documentation
+
+*** Linting
+
+#+begin_src shell
+gmake vale-sync    # Sync Vale packages (first time)
+gmake vale         # Lint all documentation
+gmake lint-docs    # Same as vale
+gmake check-docs   # Run all doc checks
+#+end_src
+
+*** Building Presentation
+
+#+begin_src shell
+gmake pdf          # Export PRESENTATION.org to PDF
+#+end_src
+
+Or from Emacs: Open =PRESENTATION.org= and press =C-c C-e l P=
+
+** Code Style
+
+- Use conventional commits
+- Add =Co-Authored-By: Claude <noreply@anthropic.com>= to commits made with AI assistance
+- Run Vale on documentation before committing
+- Ensure all tests pass
+
+** Testing
+
+All tests use SRFI-64:
+
+#+begin_src shell
+guile -L . tests/test-core.scm
+guile -L . tests/test-inference.scm
+#+end_src
+
+** Continuous Integration
+
+GitHub Actions run on every push:
+- =.github/workflows/test.yml= - Runs test suite
+- =.github/workflows/docs.yml= - Lints documentation with Vale
+
+* Making Changes
+
+1. Create a feature branch (or use git worktree)
+2. Make changes
+3. Run tests: =gmake test=
+4. Lint docs: =gmake vale=
+5. Commit with conventional commits
+6. Push and create PR
+
+* Documentation Standards
+
+- Use org-mode for all documentation
+- Follow Vale rules (see =.vale.ini=)
+- Function names in inline code: =make-measure=
+- Project name: "Guile Roulette" (title case) or "guile-roulette" (package)
+- Keep examples executable and tested
+
+* Adding Examples
+
+Examples go in =examples/= directory:
+- Make them executable (=chmod +x=)
+- Add shebang: =#!/usr/bin/env -S guile -L ..=
+- Test they work: =guile -L . examples/your-example.scm=
+
+* Questions?
+
+Open an issue or contact: dpascal@defrecord.com

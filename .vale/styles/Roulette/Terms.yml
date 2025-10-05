@@ -1,0 +1,26 @@
+extends: substitution
+message: "Use '%s' instead of '%s'"
+level: error
+ignorecase: false
+swap:
+  # Correct capitalization for project name
+  'guile-Roulette': 'guile-roulette'
+  'Guile-Roulette': 'Guile Roulette'
+  'GUILE ROULETTE': 'Guile Roulette'
+
+  # Function names must be lowercase
+  'INFER': 'infer'
+  'Infer': 'infer'
+  'SUPPORT': 'support'
+  'Support': 'support'
+  'DENSITY': 'density'
+  'Density': 'density'
+
+  # Macro names must be lowercase with hyphens
+  'Define-Measurable': 'define-measurable'
+  'DEFINE-MEASURABLE': 'define-measurable'
+  'defineMeasurable': 'define-measurable'
+
+  # Prefer correct terminology
+  'measure theory': 'measure-theoretic'
+  'measure-theory': 'measure-theoretic'

@@ -32,3 +32,10 @@ tramp
 
 # Auto-compiled files
 auto-compile/
+
+# Vale
+.vale/styles/Google/
+.vale/styles/write-good/
+
+# Reference papers
+docs/papers/

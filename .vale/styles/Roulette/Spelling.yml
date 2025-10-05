@@ -1,0 +1,60 @@
+extends: spelling
+message: "Did you mean '%s'?"
+level: error
+ignore:
+  # Project names
+  - Roulette
+  - roulette
+  - Guile
+  - guile
+  - Racket
+  - Scheme
+  - SRFI
+
+  # Function names - all lowercase
+  - infer
+  - support
+  - density
+  - measurable
+  - immutable
+
+  # Macro names - all lowercase with hyphens
+  - define-measurable
+
+  # Type/Contract names
+  - measurable-space
+  - measure
+  - engine
+
+  # Technical terms
+  - monoid
+  - composable
+  - reify
+  - reifies
+  - reifying
+  - memoryless
+  - MCMC
+  - PPL
+  - PPLs
+  - REPL
+  - DevOps
+  - gmake
+  - Geiser
+  - Beamer
+
+  # Package names
+  - NumPy
+  - PyMC
+  - StanCon
+  - SciPy
+  - FOSDEM
+  - ICFP
+  - ILC
+  - LaTeX
+  - pdflatex
+
+  # Math/stats terms
+  - Bernoulli
+  - Poisson
+  - Bayesian
+  - queueing

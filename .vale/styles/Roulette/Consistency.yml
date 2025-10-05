@@ -1,0 +1,18 @@
+extends: consistency
+message: "'%s' is inconsistent with '%s'"
+level: warning
+scope: text
+ignorecase: false
+either:
+  # Prefer one form over another
+  measurable-space:
+    - measurable space
+    - measurablespace
+
+  measure-theoretic:
+    - measure theory
+    - measuretheoretic
+
+  real-world:
+    - real world
+    - realworld

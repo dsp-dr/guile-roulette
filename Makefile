@@ -12,7 +12,7 @@ SOURCES := roulette/core.scm \
 
 COMPILED := $(SOURCES:.scm=.go)
 
-.PHONY: all clean install test check docs pdf
+.PHONY: all clean install test check docs pdf vale lint-docs check-docs
 
 all: $(COMPILED)
 
@@ -47,7 +47,7 @@ repl: all
 	$(GUILE) -L .
 
 # Documentation targets
-.PHONY: docs pdf presentation
+.PHONY: docs pdf presentation vale vale-sync lint-docs check-docs
 docs: pdf
 
 pdf: PRESENTATION.pdf
@@ -62,6 +62,57 @@ PRESENTATION.pdf: PRESENTATION.org
 		--visit=PRESENTATION.org \
 		--funcall org-beamer-export-to-pdf
 
+# Vale linting targets
+vale-sync:
+	@echo "Syncing Vale packages..."
+	vale sync
+
+vale: vale-sync
+	@echo "Linting documentation with Vale..."
+	vale README.org TUTORIAL.org API.org CONFERENCES.org roulette.org
+
+lint-docs: vale
+
+check-docs: vale
+	@echo "✓ Documentation checks complete"
+
+# Fetch reference papers
+.PHONY: fetch-papers docs-papers
+fetch-papers: docs/papers/rosette-pldi2014.pdf
+
+docs/papers/rosette-pldi2014.pdf:
+	@echo "Fetching Rosette paper..."
+	@mkdir -p docs/papers
+	curl -L -o $@ https://homes.cs.washington.edu/~bodik/ucb/Files/2014/rosette-pldi2014.pdf
+
+docs-papers: fetch-papers
+
 clean-docs:
 	rm -f PRESENTATION.pdf PRESENTATION.tex
 	rm -f *.aux *.log *.nav *.out *.snm *.toc *.vrb
+
+# Help target
+.PHONY: help
+help:
+	@echo "Guile Roulette Makefile"
+	@echo ""
+	@echo "Build targets:"
+	@echo "  all          - Build all Scheme modules (default)"
+	@echo "  clean        - Remove compiled files"
+	@echo "  install      - Install to Guile site directory"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test         - Run test suite"
+	@echo "  check        - Alias for test"
+	@echo "  repl         - Start Guile REPL with library loaded"
+	@echo ""
+	@echo "Documentation:"
+	@echo "  vale-sync    - Sync Vale linting packages"
+	@echo "  vale         - Lint documentation with Vale"
+	@echo "  lint-docs    - Alias for vale"
+	@echo "  check-docs   - Run all documentation checks"
+	@echo "  pdf          - Build PRESENTATION.pdf"
+	@echo "  docs-papers  - Fetch reference papers"
+	@echo ""
+	@echo "Cleaning:"
+	@echo "  clean-docs   - Remove generated documentation files"

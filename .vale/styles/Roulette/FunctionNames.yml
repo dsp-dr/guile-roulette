@@ -1,0 +1,8 @@
+extends: existence
+message: "Function names should use code formatting: '%s'"
+level: suggestion
+scope: text
+ignorecase: false
+tokens:
+  # Function names that should be in code blocks
+  - '\b(infer|support|density|make-measurable-space|measurable-space-point|immutable-set\/c|make-measure|make-engine|engine-id|engine-compute)\b(?![`])'

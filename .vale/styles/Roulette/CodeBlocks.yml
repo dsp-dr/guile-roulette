@@ -1,0 +1,9 @@
+extends: existence
+message: "Scheme code should use proper code blocks or inline code markers"
+level: suggestion
+scope: text
+tokens:
+  # Detect likely Scheme code not in code blocks
+  - '\(define-\w+'
+  - '\(lambda '
+  - '\(use-modules'

@@ -40,7 +40,11 @@ test: all
 	$(GUILE) -L . tests/test-core.scm
 	$(GUILE) -L . tests/test-inference.scm
 
-check: test
+compliance: all
+	@echo "Running compliance tests..."
+	$(GUILE) -L . tests/compliance/racket-examples.scm
+
+check: test compliance
 
 .PHONY: repl
 repl: all
@@ -78,11 +82,13 @@ check-docs: vale
 
 # Fetch reference papers
 .PHONY: fetch-papers docs-papers
-fetch-papers: docs/papers/rosette-pldi2014.pdf
+fetch-papers: resources/rosette-pldi2014.pdf
 
-docs/papers/rosette-pldi2014.pdf:
+resources/:
+	@mkdir -p $@
+
+resources/rosette-pldi2014.pdf: | resources/
 	@echo "Fetching Rosette paper..."
-	@mkdir -p docs/papers
 	curl -L -o $@ https://homes.cs.washington.edu/~bodik/ucb/Files/2014/rosette-pldi2014.pdf
 
 docs-papers: fetch-papers

@@ -1,0 +1,54 @@
+#+TITLE: Compliance Test Suite
+#+AUTHOR: guile-roulette
+
+* Overview
+
+This directory contains compliance tests based on the Racket roulette reference examples.
+These tests ensure our Guile port maintains compatibility with the original Racket implementation.
+
+* Running Compliance Tests
+
+#+begin_src shell
+gmake compliance      # Run all compliance tests
+#+end_src
+
+Or individually:
+
+#+begin_src shell
+guile -L ../.. compliance-examples.scm
+#+end_src
+
+* Test Coverage
+
+The compliance suite tests:
+- Basic measurable space operations
+- Measure creation and querying
+- Random variable definitions
+- Inference operations
+- Support and density queries
+- All examples from Racket documentation
+
+* Adding Tests
+
+When adding compliance tests:
+1. Reference the original Racket example
+2. Adapt Racket syntax to Guile (e.g., =#lang roulette= → =(use-modules (roulette))=)
+3. Document any intentional differences
+4. Ensure tests pass with SRFI-64
+
+* Known Differences
+
+Documented differences from Racket roulette:
+
+** Architectural
+- Module system: =use-modules= instead of =#lang=
+- Records: SRFI-9 instead of structs
+- Contracts: Simplified (no full contract system)
+- Hash tables: Guile native instead of Racket's
+
+** Semantic
+- =define-measurable= behavior: In Racket, =(define-measurable (x y) ...)= creates x and y
+  with shared identity (=eq?= returns =#t=). In Guile, each gets a unique symbol but they
+  share the same measure. Use =define-measurable*= for explicitly independent variables.
+
+These are intentional implementation choices, not bugs.

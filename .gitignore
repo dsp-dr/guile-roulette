@@ -37,5 +37,5 @@ auto-compile/
 .vale/styles/Google/
 .vale/styles/write-good/
 
-# Reference papers
-docs/papers/
+# Reference papers and resources
+resources/

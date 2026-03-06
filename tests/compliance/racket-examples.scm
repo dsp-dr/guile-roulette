@@ -130,7 +130,6 @@
       ;; but share the same measure structure
       (not (eq? p q)))))
 
+(define exit-status (test-runner-fail-count (test-runner-current)))
 (test-end "racket-compliance")
-
-;; Run tests
-(exit (= 0 (test-runner-fail-count (test-runner-current))))
+(exit (= 0 exit-status))

@@ -77,7 +77,6 @@
            (pred (measurable-space-point space)))
       (pred '()))))
 
+(define exit-status (test-runner-fail-count (test-runner-current)))
 (test-end "roulette-core")
-
-;; Run the tests
-(exit (= 0 (test-runner-fail-count (test-runner-current))))
+(exit (= 0 exit-status))

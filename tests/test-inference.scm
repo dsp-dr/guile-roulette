@@ -101,7 +101,6 @@
   (test-error "density errors on non-measure"
     (density "not a measure")))
 
+(define exit-status (test-runner-fail-count (test-runner-current)))
 (test-end "roulette-inference")
-
-;; Run the tests
-(exit (= 0 (test-runner-fail-count (test-runner-current))))
+(exit (= 0 exit-status))

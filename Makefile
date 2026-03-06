@@ -39,6 +39,7 @@ install: all
 test: all
 	$(GUILE) -L . tests/test-core.scm
 	$(GUILE) -L . tests/test-inference.scm
+	$(GUILE) -L . tests/test-edge-cases.scm
 
 compliance: all
 	@echo "Running compliance tests..."

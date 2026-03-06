@@ -1,0 +1,29 @@
+{
+  "repo_id": "repo_019cc0c5-e41d-7d9c-a956-627fe0a04de4",
+  "type": "git",
+  "init_at": "2026-03-06T01:32:00Z",
+  "init_by_email": "dpascal@defrecord.com",
+  "init_by_name": "Daria Pascal",
+  "repo_salt": "e90b1b13898c2e7ee217a7b80341c48a0ade2d79",
+  "endpoint": "https://sageox.ai",
+  "fingerprint": {
+    "first_commit": "e90b1b13898c2e7ee217a7b80341c48a0ade2d79",
+    "monthly_checkpoints": {
+      "2025-10": "e90b1b13898c2e7ee217a7b80341c48a0ade2d79"
+    },
+    "ancestry_samples": [
+      "e90b1b13898c2e7ee217a7b80341c48a0ade2d79",
+      "bc63bdb183e9d0146944f2c69620e5ab440219e1",
+      "ba81fdb0ed57ba811845df5ac39d6bec0ee63398"
+    ],
+    "remote_hashes": [
+      "sha256:9721d52e93e0258c39b1b508e98e0361e3bfbe0fa0c85d4c24304c37141a8262"
+    ]
+  },
+  "team_urls": {
+    "defrecord": "https://git.sageox.ai/sageox-team_zs4m5dzi79/team-context.git"
+  },
+  "urls_cached_at": "2026-03-06T01:32:01Z",
+  "version": "0.2.0",
+  "updated_at": "2026-03-06T01:32:01Z"
+}

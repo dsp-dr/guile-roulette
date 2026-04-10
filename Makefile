@@ -1,8 +1,8 @@
 # Makefile for guile-roulette
 # Use GNU Make (gmake on FreeBSD)
 
-GUILE := guile
-GUILD := guild
+GUILE ?= guile3
+GUILD ?= guild3
 PREFIX ?= /usr/local
 SITE_DIR := $(shell $(GUILE) -c "(display (%site-dir))")
 

@@ -39,3 +39,4 @@ auto-compile/
 
 # Reference papers and resources
 resources/
+*.core
